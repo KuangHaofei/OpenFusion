@@ -25,9 +25,12 @@ class BaseIO(object):
         self.inverse_scale = inverse_scale
         assert inverse_scale in [1, 2], "[*] inverse_scale must be 1 or 2"
 
-    def from_file(self, rgb_path, depth_path):
+    def from_file(self, rgb_path, depth_path, depth_format='png', depth_scale=1000.0):
         rgb = np.array(Image.open(rgb_path), dtype=np.uint8)
-        depth = np.array(Image.open(depth_path), dtype=np.uint16)
+        if depth_format == 'png':
+            depth = np.array(Image.open(depth_path), dtype=np.uint16)
+        elif depth_format == 'npy':
+            depth = (np.load(depth_path) * depth_scale).astype(np.uint16)
         if self.inverse_scale != 1:
             rgb = rgb[::2, ::2]
             depth = depth[::2, ::2]

@@ -330,7 +330,8 @@ class VLSLAM(BaseSLAM):
 
     @torch.no_grad()
     def semantic_query(
-        self, query:List[str], points:np.array=None, colors:np.array=None, cmap=None, n_points=500000
+        self, query:List[str], points:np.array=None, colors:np.array=None, cmap=None, n_points=500000,
+        save_file=None
     ):
         """ perform semantic segmentation on the point cloud
         Args:
@@ -350,7 +351,7 @@ class VLSLAM(BaseSLAM):
             points, colors = self.point_state.get_pc(n_points)
         if cmap is None:
             cmap = rand_cmap(len(query), type="bright", first_color_black=False)
-            get_cmap_legend(cmap, query)
+            get_cmap_legend(cmap, query, savefile=save_file)
         return self.point_state.semantic_query(t_emb, points, colors, cmap)
 
     @torch.no_grad()

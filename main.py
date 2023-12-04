@@ -12,7 +12,7 @@ from openfusion.utils import (
 from configs.build import get_config
 
 
-def stream_loop(args, slam:BaseSLAM):
+def stream_loop(args, slam: BaseSLAM):
     if args.save:
         slam.export_path = f"{args.data}_live/{args.algo}.npz"
 
@@ -30,19 +30,20 @@ def stream_loop(args, slam:BaseSLAM):
             slam.stop_monitor_thread()
 
 
-def dataset_loop(args, slam:BaseSLAM, dataset:Dataset):
+def dataset_loop(args, slam: BaseSLAM, dataset: Dataset):
     if args.save:
-        slam.export_path = f"{args.data}_{args.scene}_{args.algo}.npz"
+        slam.export_path = f"results/{args.data}_{args.scene}_{args.algo}.npz"
 
     if args.live:
         slam.start_monitor_thread()
         slam.start_query_thread()
     i = 0
     for rgb_path, depth_path, extrinsics in tqdm(dataset):
-        rgb, depth = slam.io.from_file(rgb_path, depth_path)
+        rgb, depth = slam.io.from_file(
+            rgb_path, depth_path, depth_format='npy', depth_scale=slam.point_state.depth_scale)
         slam.io.update(rgb, depth, extrinsics)
         slam.vo()
-        slam.compute_state(encode_image=i%10==0)
+        slam.compute_state(encode_image=i % 10 == 0)
         i += 1
     if args.live:
         slam.stop_query_thread()
@@ -61,11 +62,11 @@ def main():
     parser.add_argument('--stream', action='store_true')
     parser.add_argument('--save', action='store_true')
     parser.add_argument('--load', action='store_true')
-    parser.add_argument('--host_ip', type=str, default="YOUR IP") # for stream
+    parser.add_argument('--host_ip', type=str, default="YOUR IP")  # for stream
     args = parser.parse_args()
 
     params = get_config(args.data, args.scene)
-    dataset:Dataset = params["dataset"](params["path"], args.frames, args.stream)
+    dataset: Dataset = params["dataset"](params["path"], args.frames, args.stream)
     intrinsic = dataset.load_intrinsics(params["img_size"], params["input_size"])
     slam = build_slam(args, intrinsic, params)
 
@@ -73,12 +74,12 @@ def main():
         args.scene = "live"
 
     # NOTE: real-time semantic map construction
-    if not os.path.exists(f"{args.data}_{args.scene}"):
-        os.makedirs(f"{args.data}_{args.scene}")
+    if not os.path.exists(f"results/{args.data}_{args.scene}"):
+        os.makedirs(f"results/{args.data}_{args.scene}")
     if args.load:
-        if os.path.exists(f"{args.data}_{args.scene}/{args.algo}.npz"):
+        if os.path.exists(f"results/{args.data}_{args.scene}/{args.algo}.npz"):
             print("[*] loading saved state...")
-            slam.point_state.load(f"{args.data}_{args.scene}/{args.algo}.npz")
+            slam.point_state.load(f"results/{args.data}_{args.scene}/{args.algo}.npz")
         else:
             print("[*] no saved state found, skipping...")
     else:
@@ -87,16 +88,16 @@ def main():
         else:
             dataset_loop(args, slam, dataset)
             if args.save:
-                slam.save(f"{args.data}_{args.scene}/{args.algo}.npz")
+                slam.save(f"results/{args.data}_{args.scene}/{args.algo}.npz")
 
     # NOTE: save point cloud
     points, colors = slam.point_state.get_pc()
-    save_pc(points, colors, f"{args.data}_{args.scene}/color_pc.ply")
+    save_pc(points, colors, f"results/{args.data}_{args.scene}/color_pc.ply")
 
     # NOTE: save colorized mesh
     mesh = slam.point_state.get_mesh()
-    o3d.io.write_triangle_mesh(f"{args.data}_{args.scene}/color_mesh.ply", mesh)
-    o3d.io.write_triangle_mesh(f"{args.data}_{args.scene}/color_mesh.glb", mesh)
+    o3d.io.write_triangle_mesh(f"results/{args.data}_{args.scene}/color_mesh.ply", mesh)
+    o3d.io.write_triangle_mesh(f"results/{args.data}_{args.scene}/color_mesh.glb", mesh)
 
     # NOTE: modify below to play with query
     if args.algo in ["cfusion", "vlfusion"]:
@@ -105,9 +106,10 @@ def main():
         points, colors = slam.semantic_query([
             "vase", "table", "tv shelf", "curtain", "wall", "floor", "ceiling", "door", "tv",
             "room plant", "light", "sofa", "cushion", "wall paint", "chair"
-        ])
+        ], save_file=f"results/{args.data}_{args.scene}/cmap.png")
         show_pc(points, colors, slam.point_state.poses)
-        save_pc(points, colors, f"{args.data}_{args.scene}/semantic_pc.ply")
+        save_pc(points, colors, f"results/{args.data}_{args.scene}/semantic_pc.ply")
+
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
 import os.path as osp
-from openfusion.datasets import ICL, Replica, ScanNet, Kobuki, Live
+from openfusion.datasets import ICL, Replica, ScanNet, Kobuki, Live, HabitatSim, Dingo
 
 BASE_PATH = osp.dirname(osp.dirname(osp.abspath(__file__)))
 
@@ -58,6 +58,28 @@ PARAMS = {
         "block_count": 100000, # will be increased automatically if needed
         "img_size": (640,360),
         "input_size": (640,360)
+    },
+    "habitat": {
+        "dataset": HabitatSim,
+        "path": "{}/sample/habitat/{}",
+        "depth_scale": 1000.0,
+        "depth_max": 5.0,
+        "voxel_size": 8.0 / 512,
+        "block_resolution": 8,
+        "block_count": 200000,
+        "img_size": (1080, 720),
+        "input_size": (1080, 720)
+    },
+    "dingo": {
+        "dataset": Dingo,
+        "path": "{}/sample/habitat/{}",
+        "depth_scale": 1000.0,
+        "depth_max": 10.0,
+        "voxel_size": 16.0 / 512,
+        "block_resolution": 16,
+        "block_count": 100000,
+        "img_size": (640, 480),
+        "input_size": (640, 480)
     },
 }
 

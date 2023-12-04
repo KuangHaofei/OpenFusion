@@ -10,6 +10,7 @@ git clone git@github.com:UX-Decoder/Segment-Everything-Everywhere-All-At-Once.gi
 ```
 
 :point_right: *[New]* **Latest Checkpoints and Numbers:**
+
 |                 |                                                                                             |          | COCO |      |      | Ref-COCOg |      |      | VOC   |       | SBD   |       |
 |-----------------|---------------------------------------------------------------------------------------------|----------|------|------|------|-----------|------|------|-------|-------|-------|-------|
 | Method          | Checkpoint                                                                                  | backbone | PQ   | mAP  | mIoU | cIoU      | mIoU | AP50 | NoC85 | NoC90 | NoC85 | NoC90 |

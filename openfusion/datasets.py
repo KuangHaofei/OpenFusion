@@ -6,6 +6,30 @@ from scipy.spatial.transform import Rotation as Rot
 from openfusion.utils import preprocess_extrinsics, kobuki_pose2rgbd, custom_intrinsic
 
 
+def pose_to_transformation_matrix(pose):
+    # Translation vector
+    t = np.array(pose[:3])
+
+    # Rotation quaternion
+    q = np.array(pose[3:])
+    r = Rot.from_quat(q)
+
+    # 3x3 rotation matrix
+    rot_matrix = r.as_matrix()
+
+    rot_ro_cam = np.eye(3)
+    rot_ro_cam[1, 1] = -1
+    rot_ro_cam[2, 2] = -1
+    rot_matrix = rot_matrix @ rot_ro_cam
+
+    # 4x4 transformation matrix
+    trans_matrix = np.eye(4)
+    trans_matrix[:3, :3] = rot_matrix
+    trans_matrix[:3, 3] = t
+
+    return trans_matrix
+
+
 class Dataset(object):
     def __init__(self, data_path, max_frames, stream=False) -> None:
         self.data_path = data_path
@@ -37,7 +61,7 @@ class Dataset(object):
         return []
 
     def load_intrinsics(self, intrinsic_path, img_size, input_size):
-        intrinsic = np.loadtxt(intrinsic_path)[:3,:3]
+        intrinsic = np.loadtxt(intrinsic_path)[:3, :3]
         return custom_intrinsic(intrinsic, *img_size, *input_size)
 
     def load_pose(self):
@@ -168,9 +192,66 @@ class Live(Dataset):
         return super().load_intrinsics(self.data_path + "/../intrinsics.txt", img_size, input_size)
 
     def load_pose(self):
-        pose_list = sorted(glob.glob(self.data_path + '/pose/*.txt'), key=lambda p: int(p.split("/")[-1].rstrip('.txt')))
+        pose_list = sorted(glob.glob(self.data_path + '/pose/*.txt'),
+                           key=lambda p: int(p.split("/")[-1].rstrip('.txt')))
         extrinsics = []
         for file in pose_list:
             pose_matrix = np.loadtxt(file)
             extrinsics.append(pose_matrix)
         return extrinsics
+
+
+class HabitatSim(Dataset):
+    def scenes(self):
+        return ["test"]
+
+    def load_intrinsics(self, img_size, input_size):
+        return super().load_intrinsics(self.data_path + "/intrinsics.txt", img_size, input_size)
+
+    def load_pose(self):
+        pose_arr = np.loadtxt(os.path.join(self.data_path, 'poses.txt')).tolist()
+
+        extrinsics = []
+        for pose in pose_arr:
+            curpose = pose_to_transformation_matrix(pose)
+            extrinsics.append(curpose)
+
+        return [np.linalg.inv(e.astype(np.float64)) for e in
+                preprocess_extrinsics(extrinsics)]
+
+    def load_depth(self):
+        depths_list = sorted(
+            glob.glob(self.data_path + '/depth/*.npy'),
+            key=lambda p: int(p.split("/")[-1].rstrip('.npy'))
+        )
+        return depths_list
+
+
+class Dingo(Dataset):
+    def scenes(self):
+        return ["dingo_gazebo"]
+
+    def load_intrinsics(self, img_size, input_size):
+        return super().load_intrinsics(self.data_path + "/intrinsics.txt", img_size, input_size)
+
+    def load_pose(self):
+        pose_arr = np.loadtxt(os.path.join(self.data_path, 'poses.txt')).tolist()
+
+        camera2realcamera = np.array([[1.0, 0.0, 0.0, 0.0],
+                                      [0.0, -1.0, 0.0, 0.0],
+                                      [0.0, 0.0, -1.0, 0.0],
+                                      [0.0, 0.0, 0.0, 1.0]])
+        extrinsics = []
+        for pose in pose_arr:
+            curpose = pose_to_transformation_matrix(pose)
+            extrinsics.append(curpose @ camera2realcamera)
+
+        return [np.linalg.inv(e.astype(np.float64)) for e in
+                preprocess_extrinsics(extrinsics)]
+
+    def load_depth(self):
+        depths_list = sorted(
+            glob.glob(self.data_path + '/depth/*.npy'),
+            key=lambda p: int(p.split("/")[-1].rstrip('.npy'))
+        )
+        return depths_list

@@ -1,3 +1,7 @@
+
+checkpoints/
+sample/
+
 wandb*
 demo*
 _site
