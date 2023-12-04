@@ -76,8 +76,8 @@ PARAMS = {
         "depth_scale": 1000.0,
         "depth_max": 10.0,
         "voxel_size": 16.0 / 512,
-        "block_resolution": 16,
-        "block_count": 100000,
+        "block_resolution": 8,
+        "block_count": 500000,
         "img_size": (640, 480),
         "input_size": (640, 480)
     },

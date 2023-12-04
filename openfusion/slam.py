@@ -340,6 +340,7 @@ class VLSLAM(BaseSLAM):
             colors (np.array, optional): original color of points. Defaults to None.
             cmap (_type_, optional): colormap to use. Defaults to None.
             n_points (int, optional): number of points to query. -1 to select all. Defaults to 500000.
+            save_file (str, optional): path to save the colormap. Defaults to None.
 
         Returns:
             points (np.array): xyz coordinates
