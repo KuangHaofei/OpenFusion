@@ -70,16 +70,65 @@ PARAMS = {
         "img_size": (1080, 720),
         "input_size": (1080, 720)
     },
-    "dingo": {
+    "dingo_hospital": {
         "dataset": Dingo,
-        "path": "{}/sample/habitat/{}",
+        "path": "{}/sample/dingo/{}",
         "depth_scale": 1000.0,
-        "depth_max": 10.0,
+        "depth_max": 5.0,
         "voxel_size": 16.0 / 512,
-        "block_resolution": 8,
-        "block_count": 500000,
+        "block_resolution": 16,
+        "block_count": 100000,
         "img_size": (640, 480),
-        "input_size": (640, 480)
+        "input_size": (640, 480),
+        "objects": [
+            "floor",
+            "ceiling",
+            "walls",
+            "nurses_station",
+            "door",
+            "chair",
+            "trolley bed",
+            "table",
+            "sofe",
+            "medical machine",
+            "tv",
+            "kitchen cabinet",
+            "refrigerator",
+            "toilet",
+            "sink",
+            "trash",
+            "warehouse clusters"
+            "others"
+        ]
+    },
+    "dingo_house": {
+        "dataset": Dingo,
+        "path": "{}/sample/dingo/{}",
+        "depth_scale": 1000.0,
+        "depth_max": 5.0,
+        "voxel_size": 8.0 / 512,
+        "block_resolution": 8,
+        "block_count": 20000,
+        "img_size": (640, 480),
+        "input_size": (640, 480),
+        "objects": [
+            "Floor",
+            "Wall",
+            "Door",
+            "Window",
+            "Sofa",
+            "Bed",
+            "Chair",
+            "Light",
+            "Table",
+            "Cabinet",
+            "Refrigerator",
+            "Airconditioner",
+            "KitchenTable",
+            "TV",
+            "Ball",
+            "others"
+        ]
     },
 }
 

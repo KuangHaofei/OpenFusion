@@ -909,14 +909,13 @@ class VLState(BaseState):
         semseg = np.array(semseg)
 
         # Define excluded classes
-        included_classes = [0]  # Replace with actual class IDs
-        # Filter out points not belonging to included classes
-        included_mask = np.isin(semseg, included_classes)
-        semseg = semseg[included_mask]
+        # included_classes = list(range(0, 17))
+        # included_mask = np.isin(semseg, included_classes)
+        # semseg = semseg[included_mask]
+        # points = points[included_mask]
 
         cls = [cmap(clsid) for clsid in semseg]
         colors = np.array(cls)[:, :3]
-        points = points[included_mask]
 
         return points, colors
 

@@ -11,7 +11,6 @@ from openfusion.utils import (
 )
 from configs.build import get_config
 
-
 def stream_loop(args, slam: BaseSLAM):
     if args.save:
         slam.export_path = f"{args.data}_live/{args.algo}.npz"
@@ -89,26 +88,29 @@ def main():
             dataset_loop(args, slam, dataset)
             if args.save:
                 slam.save(f"results/{args.data}_{args.scene}/{args.algo}.npz")
+                print(f"[*] saved state to {f'results/{args.data}_{args.scene}/{args.algo}.npz'}")
 
     # NOTE: save point cloud
     points, colors = slam.point_state.get_pc()
     save_pc(points, colors, f"results/{args.data}_{args.scene}/color_pc.ply")
+    print(f"[*] saved color point cloud to {f'results/{args.data}_{args.scene}/color_pc.ply'}")
 
     # NOTE: save colorized mesh
     mesh = slam.point_state.get_mesh()
     o3d.io.write_triangle_mesh(f"results/{args.data}_{args.scene}/color_mesh.ply", mesh)
     o3d.io.write_triangle_mesh(f"results/{args.data}_{args.scene}/color_mesh.glb", mesh)
+    print(f"[*] saved color mesh to {f'results/{args.data}_{args.scene}/color_mesh.ply'}")
+    print(f"[*] saved color mesh to {f'results/{args.data}_{args.scene}/color_mesh.glb'}")
 
     # NOTE: modify below to play with query
     if args.algo in ["cfusion", "vlfusion"]:
         # points, colors = slam.query("Window", topk=3)
         # points, colors = slam.query("there is a stainless steel fridge in the ketchen", topk=3)
-        points, colors = slam.semantic_query([
-            "vase", "table", "tv shelf", "curtain", "wall", "floor", "ceiling", "door", "tv",
-            "room plant", "light", "sofa", "cushion", "wall paint", "chair"
-        ], save_file=f"results/{args.data}_{args.scene}/cmap.png")
+        points, colors = slam.semantic_query(
+            params['objects'], save_file=f"results/{args.data}_{args.scene}/cmap.png")
         show_pc(points, colors, slam.point_state.poses)
         save_pc(points, colors, f"results/{args.data}_{args.scene}/semantic_pc.ply")
+        print(f"[*] saved semantic point cloud to {f'results/{args.data}_{args.scene}/semantic_pc.ply'}")
 
 
 if __name__ == "__main__":

@@ -39,15 +39,6 @@ else:
 
 # visual-language querying
 if args.algo in ["cfusion", "vlfusion"]:
-    # points, colors = slam.query("Window", topk=3)
-    # points, colors = slam.query(prompt, topk=3)
-    points, colors = slam.semantic_query([
-        "vase", "table", "tv shelf", "curtain", "wall", "floor", "ceiling", "door", "tv",
-        "room plant", "light", "sofa", "cushion", "wall paint", "chair", "bed", "people", "others"
-    ], save_file=f"results/{args.data}_{args.scene}/cmap.png")
-    # print(points.shape)
-    # print(colors.shape)
+    points, colors = slam.semantic_query(
+        params['objects'], save_file=f"results/{args.data}_{args.scene}/cmap.png")
     show_pc(points, colors, slam.point_state.poses)
-    # save_pc(points, colors, f"results/{args.data}_{args.scene}/semantic_pc.ply")
-
-# remove ceiling, floor and wall
