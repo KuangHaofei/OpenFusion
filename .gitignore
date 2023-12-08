@@ -1,6 +1,6 @@
-
 checkpoints/
 sample/
+*.ply
 
 wandb*
 demo*

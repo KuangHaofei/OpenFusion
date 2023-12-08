@@ -917,7 +917,7 @@ class VLState(BaseState):
         cls = [cmap(clsid) for clsid in semseg]
         colors = np.array(cls)[:, :3]
 
-        return points, colors
+        return points, colors, semseg
 
     @torch.no_grad()
     def panoptic_query(self, t_emb, points, colors=None, cmap=None, metadata=None, overlap_threshold=0.7):

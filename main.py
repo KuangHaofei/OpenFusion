@@ -106,7 +106,7 @@ def main():
     if args.algo in ["cfusion", "vlfusion"]:
         # points, colors = slam.query("Window", topk=3)
         # points, colors = slam.query("there is a stainless steel fridge in the ketchen", topk=3)
-        points, colors = slam.semantic_query(
+        points, colors, _ = slam.semantic_query(
             params['objects'], save_file=f"results/{args.data}_{args.scene}/cmap.png")
         show_pc(points, colors, slam.point_state.poses)
         save_pc(points, colors, f"results/{args.data}_{args.scene}/semantic_pc.ply")

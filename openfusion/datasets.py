@@ -248,7 +248,7 @@ class HabitatSim(Dataset):
 class Dingo(Dataset):
     def scenes(self):
         return ["dingo_hospital", "dingo_hospital_large", "dingo_hospital_small",
-                "dingo_house"]
+                "dingo_house", "dingo_demo"]
 
     def load_intrinsics(self, img_size, input_size):
         return super().load_intrinsics(self.data_path + "/intrinsics.txt", img_size, input_size)
