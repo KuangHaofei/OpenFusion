@@ -76,3 +76,66 @@ def get_covered_viewpoints(pcd: o3d.geometry.PointCloud, time_stamp, frame_id='m
         nvs.poses.append(nv)
 
     return nvs
+
+
+def find_closest_ray(robot_position, rays):
+    min_distance = float('inf')
+    closest_ray_index = -1
+
+    for i, ray in enumerate(rays):
+        for point in ray:
+            distance = np.linalg.norm(np.array(robot_position[:2]) - np.array(point[:2]))
+            if distance < min_distance:
+                min_distance = distance
+                closest_ray_index = i
+
+    return closest_ray_index
+
+
+def generate_sampling_based_viewpoints(
+        center, min_radius, max_distance, interval_degrees=30, sampling_interval=0.1, robot_position=[0, 0]):
+    rays = []
+    for angle in range(0, 360, interval_degrees):
+        viewpints_along_ray = []
+        radians = np.deg2rad(angle)
+        for distance in np.arange(min_radius, max_distance, sampling_interval):
+            x = center[0] + distance * np.cos(radians)
+            y = center[1] + distance * np.sin(radians)
+            position = (x, y)
+            yaw = np.arctan2(center[1] - y, center[0] - x)
+            viewpints_along_ray.append([position[0], position[1], yaw])
+        rays.append(viewpints_along_ray[::-1])    # from far to near
+
+    # find the closest ray to the robot, and rotate the list
+    closest_ray_index = find_closest_ray(robot_position, rays)
+    viewpoints = rays[closest_ray_index:] + rays[:closest_ray_index]
+
+    viewpoints = np.array(viewpoints)
+    return viewpoints
+
+
+def get_sampling_based_viewpoints(
+        pcd: o3d.geometry.PointCloud, robot_position, time_stamp, frame_id='map',
+        max_distance=3.0, sampling_interval=0.3):
+    bbox = pcd.get_axis_aligned_bounding_box()
+    bbox_center = bbox.get_center()[:2]
+    bbox_points = np.asarray(bbox.get_box_points())
+
+    min_radius = 0.0
+    for point in bbox_points:
+        if np.linalg.norm(point[:2] - bbox_center) > min_radius:
+            min_radius = np.linalg.norm(point[:2] - bbox_center)
+
+    viewpoints = generate_sampling_based_viewpoints(
+        bbox_center, min_radius, max_distance, 15, sampling_interval, robot_position)
+    flat_viewpoints = [vp for sublist in viewpoints for vp in sublist]
+
+    # covert viewpoint to Pose array
+    nvs = PoseArray()
+    nvs.header.stamp = time_stamp
+    nvs.header.frame_id = frame_id
+    for viewpoint in flat_viewpoints:
+        nv = pose2d_to_posemsg(viewpoint)
+        nvs.poses.append(nv)
+
+    return nvs

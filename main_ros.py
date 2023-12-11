@@ -19,7 +19,7 @@ from std_msgs.msg import Bool
 from configs.build import get_config
 from openfusion.slam import build_slam
 from openfusion.utils import get_pcd
-from utils_ros import pose_to_transformation_matrix, generate_viewpoints, pose2d_to_posemsg, get_covered_viewpoints
+from utils_ros import pose_to_transformation_matrix, get_covered_viewpoints, get_sampling_based_viewpoints
 
 
 def get_args():
@@ -32,6 +32,7 @@ def get_args():
     parser.add_argument('--live', action='store_true')
     parser.add_argument('--stream', action='store_true')
     parser.add_argument('--load', action='store_true')
+    parser.add_argument('--save', action='store_true')
     parser.add_argument('--host_ip', type=str, default="YOUR IP")  # for stream
     args = parser.parse_args()
     return args
@@ -76,7 +77,8 @@ class SLAMNode:
         self.total_classes = [
             'floor', 'wall', 'ceil', 'sofa', 'bed', 'table', 'cabinet',
             'home appliances', 'chair', 'ball', 'trash', 'tv', 'light', 'others']
-        self.exploration_objects = ['sofa', 'bed', 'chair', 'ball']
+        self.exploration_objects = ['sofa', 'bed', 'ball']
+        # self.exploration_objects = ['sofa']
         self.exploration_pcds = self.get_semantic()
 
         # start ROS node
@@ -84,9 +86,10 @@ class SLAMNode:
 
         self.count = 0
         self.nav_completed_flag = True
+        self.robot_pose = Pose()
 
         self.bridge = CvBridge()
-        # self.setup_subscribers()
+        self.setup_subscribers()
 
         # publisher
         self.pcd_pub = rospy.Publisher('/dingo_pointcloud', PointCloud2, queue_size=1)
@@ -110,6 +113,7 @@ class SLAMNode:
         rgb = self.bridge.imgmsg_to_cv2(rgb_msg, "bgr8")
         depth = self.bridge.imgmsg_to_cv2(depth_msg, "32FC1")
         pose = odom_msg.pose.pose
+        self.robot_pose = pose
         time_stamp = rgb_msg.header.stamp
 
         # pose to numpy matrix (transfer to global frame)
@@ -153,9 +157,14 @@ class SLAMNode:
                 print("Current groups is ", instance_pcd)
 
                 # get viewpoints around pointclouds
+                robot_position = [self.robot_pose.position.x, self.robot_pose.position.y]
                 timestamp = rospy.Time.now()
                 frame_id = 'map'
-                nvs = get_covered_viewpoints(instance_pcd, timestamp, frame_id)
+                # nvs = get_covered_viewpoints(instance_pcd, timestamp, frame_id)
+                nvs = get_sampling_based_viewpoints(
+                    instance_pcd, robot_position, timestamp, frame_id,
+                    max_distance=3.0, sampling_interval=0.3)
+
                 ros_pcd = open3d_ros_helper.o3dpc_to_rospc(instance_pcd, frame_id, timestamp)
 
                 # Publish the point cloud
@@ -216,6 +225,9 @@ class SLAMNode:
 
     def stop(self):
         rospy.signal_shutdown("Shutting down")
+        if self.args.save:
+            self.slam.save(f"results/{args.data}_{args.scene}/{args.algo}_completion.npz")
+            print(f"[*] saved state to {f'results/{args.data}_{args.scene}/{args.algo}_completion.npz'}")
         print("Done")
 
 

@@ -20,6 +20,7 @@ def get_args():
     parser.add_argument('--device', type=str, default="cuda:0", choices=["cpu:0", "cuda:0"])
     parser.add_argument('--live', action='store_true')
     parser.add_argument('--stream', action='store_true')
+    parser.add_argument('--load_completion', action='store_true')
     parser.add_argument('--host_ip', type=str, default="YOUR IP")  # for stream
     args = parser.parse_args()
     return args
@@ -33,11 +34,18 @@ intrinsic = custom_intrinsic(intrinsic, *params["img_size"], *params["input_size
 slam = build_slam(args, intrinsic, params)
 
 # loading npz
-if os.path.exists(f"results/{args.data}_{args.scene}/{args.algo}.npz"):
-    print("[*] loading saved state...")
-    slam.point_state.load(f"results/{args.data}_{args.scene}/{args.algo}.npz")
+if args.load_completion:
+    if os.path.exists(f"results/{args.data}_{args.scene}/{args.algo}_completion.npz"):
+        print("[*] loading saved state...")
+        slam.point_state.load(f"results/{args.data}_{args.scene}/{args.algo}.npz")
+    else:
+        print("[*] no saved state found, skipping...")
 else:
-    print("[*] no saved state found, skipping...")
+    if os.path.exists(f"results/{args.data}_{args.scene}/{args.algo}.npz"):
+        print("[*] loading saved state...")
+        slam.point_state.load(f"results/{args.data}_{args.scene}/{args.algo}.npz")
+    else:
+        print("[*] no saved state found, skipping...")
 
 total_classes = [
     'floor', 'wall', 'ceil', 'sofa', 'bed', 'table', 'cabinet',
