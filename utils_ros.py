@@ -1,8 +1,15 @@
+import os
+
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 import open3d as o3d
 
 from geometry_msgs.msg import Pose, PoseArray
+
+
+def ensure_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 
 def pose_to_transformation_matrix(pose):

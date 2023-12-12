@@ -3,14 +3,15 @@ import argparse
 import os
 import time
 
-import matplotlib.pyplot as plt
+import cv2
 import numpy as np
 import open3d as o3d
+from scipy.spatial.transform import Rotation as R
 
 import rospy
 import message_filters
 from sensor_msgs.msg import Image, PointCloud2
-from geometry_msgs.msg import Pose, Point, Quaternion, PoseArray
+from geometry_msgs.msg import Pose, PoseArray, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 from open3d_ros_helper import open3d_ros_helper
@@ -19,7 +20,7 @@ from std_msgs.msg import Bool
 from configs.build import get_config
 from openfusion.slam import build_slam
 from openfusion.utils import get_pcd
-from utils_ros import pose_to_transformation_matrix, get_covered_viewpoints, get_sampling_based_viewpoints
+from utils_ros import pose_to_transformation_matrix, get_covered_viewpoints, get_sampling_based_viewpoints, ensure_dir
 
 
 def get_args():
@@ -77,8 +78,8 @@ class SLAMNode:
         self.total_classes = [
             'floor', 'wall', 'ceil', 'sofa', 'bed', 'table', 'cabinet',
             'home appliances', 'chair', 'ball', 'trash', 'tv', 'light', 'others']
-        self.exploration_objects = ['sofa', 'bed', 'ball']
-        # self.exploration_objects = ['sofa']
+        # self.exploration_objects = ['sofa', 'bed']
+        self.exploration_objects = ['sofa']
         self.exploration_pcds = self.get_semantic()
 
         # start ROS node
@@ -87,6 +88,14 @@ class SLAMNode:
         self.count = 0
         self.nav_completed_flag = True
         self.robot_pose = Pose()
+
+        # collecting data
+        self.root_dir = f"results/{args.data}_{args.scene}/collect_data"
+        ensure_dir(os.path.join(self.root_dir, 'rgb'))
+        ensure_dir(os.path.join(self.root_dir, 'depth'))
+        self.file_counter = 0
+        self.callback_counter = 0
+        self.save_frequency = 1
 
         self.bridge = CvBridge()
         self.setup_subscribers()
@@ -99,20 +108,25 @@ class SLAMNode:
         # subscriber
         self.nav_completed_flag_sub = rospy.Subscriber('/nav_completed', Bool, self.nav_completed_callback)
 
+        # semantic-based completion
+        self.publish_3dmap(time_stamp=rospy.Time.now())
         self.semantic_based_completion()
+        self.publish_3dmap(time_stamp=rospy.Time.now())
 
     def setup_subscribers(self):
         rgb_sub = message_filters.Subscriber('/realsense/color/image_raw', Image)
         depth_sub = message_filters.Subscriber('/realsense/depth/image_rect_raw', Image)
-        pose_sub = message_filters.Subscriber('/dingo_gt/odom', Odometry)
+        # pose_sub = message_filters.Subscriber('/dingo_gt/odom', Odometry)
+        pose_sub = message_filters.Subscriber('/amcl_pose', PoseWithCovarianceStamped)
 
         ts = message_filters.ApproximateTimeSynchronizer([rgb_sub, depth_sub, pose_sub], 10, 0.1)
         ts.registerCallback(self.sensor_callback)
 
-    def sensor_callback(self, rgb_msg: Image, depth_msg: Image, odom_msg: Odometry):
+    def sensor_callback(self, rgb_msg: Image, depth_msg: Image, pose_msg: PoseWithCovarianceStamped):
+        self.callback_counter += 1
         rgb = self.bridge.imgmsg_to_cv2(rgb_msg, "bgr8")
         depth = self.bridge.imgmsg_to_cv2(depth_msg, "32FC1")
-        pose = odom_msg.pose.pose
+        pose = pose_msg.pose.pose
         self.robot_pose = pose
         time_stamp = rgb_msg.header.stamp
 
@@ -123,9 +137,11 @@ class SLAMNode:
         self.update(rgb, depth, pose)
 
         # publish pointclouds
-        curr_pcd = self.get_pc()
-        ros_pcd = open3d_ros_helper.o3dpc_to_rospc(curr_pcd, 'map', time_stamp)
-        self.pcd_pub.publish(ros_pcd)
+        # self.publish_3dmap(time_stamp)
+
+        if self.callback_counter % self.save_frequency == 0:
+            self.save_data(rgb, depth, pose)
+            self.callback_counter = 0
 
     def nav_completed_callback(self, msg: Bool):
         self.nav_completed_flag = msg.data
@@ -220,14 +236,36 @@ class SLAMNode:
         print(f"[*] Querying the Map by language in {time.time() - t:.2f}s")
         return exploration_pcds
 
+    def publish_3dmap(self, time_stamp):
+        curr_pcd = self.get_pc()
+        ros_pcd = open3d_ros_helper.o3dpc_to_rospc(curr_pcd, 'map', time_stamp)
+        self.pcd_pub.publish(ros_pcd)
+
+    def save_data(self, rgb, depth, pose):
+        # File name formatting
+        file_name = f"{self.file_counter:05d}"
+
+        # Save RGB image and Depth
+        cv2.imwrite(os.path.join(self.root_dir, f'rgb/{file_name}.png'), rgb)
+        np.save(os.path.join(self.root_dir, f'depth/{file_name}.npy'), depth)
+
+        # Save Pose
+        trans = pose[:3, 3]
+        rot = R.from_matrix(pose[:3, :3]).as_quat()
+        with open(os.path.join(self.root_dir, 'poses.txt'), 'a') as f:
+            f.write(f'{trans[0]} {trans[1]} {trans[2]} {rot[0]} {rot[1]} {rot[2]} {rot[3]}\n')
+
+        self.file_counter += 1
+
     def run(self):
         rospy.spin()
 
     def stop(self):
         rospy.signal_shutdown("Shutting down")
         if self.args.save:
-            self.slam.save(f"results/{args.data}_{args.scene}/{args.algo}_completion.npz")
-            print(f"[*] saved state to {f'results/{args.data}_{args.scene}/{args.algo}_completion.npz'}")
+            file_name = f"results/{args.data}_{args.scene}/{args.algo}_completion.npz"
+            self.slam.save(file_name)
+            print(f"[*] saved state to {file_name}")
         print("Done")
 
 
