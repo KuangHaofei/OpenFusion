@@ -106,8 +106,14 @@ def main():
     if args.algo in ["cfusion", "vlfusion"]:
         # points, colors = slam.query("Window", topk=3)
         # points, colors = slam.query("there is a stainless steel fridge in the ketchen", topk=3)
-        points, colors, _ = slam.semantic_query(
+        points, colors, semseg = slam.semantic_query(
             params['objects'], save_file=f"results/{args.data}_{args.scene}/cmap.png")
+
+        # save points, colors, and semseg to npy file
+        np.save(f"results/{args.data}_{args.scene}/points.npy", points)
+        np.save(f"results/{args.data}_{args.scene}/colors.npy", colors)
+        np.save(f"results/{args.data}_{args.scene}/semseg.npy", semseg)
+
         show_pc(points, colors, slam.point_state.poses)
         save_pc(points, colors, f"results/{args.data}_{args.scene}/semantic_pc.ply")
         print(f"[*] saved semantic point cloud to {f'results/{args.data}_{args.scene}/semantic_pc.ply'}")
