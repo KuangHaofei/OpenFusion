@@ -90,8 +90,8 @@ class HungarianMatcher(nn.Module):
         # but approximate it in 1 - proba[target class].
         # The 1 is a constant that doesn't change the matching, it can be ommitted.
         # cost_class = sim
-
-        cost_mask = soft_iou_jit(out_mask, tgt_mask)
+        with torch.jit.optimized_execution(False):
+            cost_mask = soft_iou_jit(out_mask, tgt_mask)
 
         # cost matrix
         C = self.cost_mask * cost_mask

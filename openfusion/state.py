@@ -887,9 +887,17 @@ class VLState(BaseState):
         mask_cls = torch.einsum("cd,nd->cn", t_emb, mask_pred_caption)  # (C, E)
         outputs_class = F.softmax(mask_cls, dim=0)  # (C, E)
 
+        # mask_key = mask_key.flatten(0)
+        # mask_pred = torch.zeros(mask_key.shape[0], torch.unique(mask_key)[-1] + 1, device=t_emb.device)
+        # mask_pred.scatter_(1, mask_key.to(t_emb.device).unsqueeze(-1), mask_conf.view(-1, 1).to(t_emb.device))
+        # semseg = torch.einsum("cn,qn->qc", outputs_class, mask_pred[:, valid_keys]).argmax(1).cpu()  # (M,)
+
         mask_key = mask_key.flatten(0)
-        mask_pred = torch.zeros(mask_key.shape[0], torch.unique(mask_key)[-1] + 1, device=t_emb.device)
-        mask_pred.scatter_(1, mask_key.to(t_emb.device).unsqueeze(-1), mask_conf.view(-1, 1).to(t_emb.device))
+        mask_pred = torch.zeros(
+            mask_key.shape[0], torch.unique(mask_key)[-1] + 1, device=torch.device("cpu"))
+        mask_pred.scatter_(
+            1, mask_key.to(torch.device("cpu")).unsqueeze(-1), mask_conf.view(-1, 1).to(torch.device("cpu")))
+        outputs_class = outputs_class.cpu()
         semseg = torch.einsum("cn,qn->qc", outputs_class, mask_pred[:, valid_keys]).argmax(1).cpu()  # (M,)
 
         poi = self.emb_coords[
@@ -901,18 +909,8 @@ class VLState(BaseState):
         tree = KDTree(poi, leaf_size=10)
         dist, ind = tree.query(points, k=10)
 
-        # cls = [cmap(np.argmax(np.bincount(m, weights=1/(1+d)))) for d, m in zip(dist, semseg[ind])]
-        # colors = np.array(cls)[:,:3]
-        # return points, colors
-
         semseg = [np.argmax(np.bincount(m, weights=1 / (1 + d))) for d, m in zip(dist, semseg[ind])]
         semseg = np.array(semseg)
-
-        # Define excluded classes
-        # included_classes = list(range(0, 17))
-        # included_mask = np.isin(semseg, included_classes)
-        # semseg = semseg[included_mask]
-        # points = points[included_mask]
 
         cls = [cmap(clsid) for clsid in semseg]
         colors = np.array(cls)[:, :3]

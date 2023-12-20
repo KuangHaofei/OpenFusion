@@ -9,15 +9,14 @@ from std_msgs.msg import Bool
 
 class MoveBaseClient:
     def __init__(self):
+        self.goal_timeout = rospy.Duration(30)
         self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-        self.pose_subscriber = rospy.Subscriber('/dingo_viewpoints', PoseArray, self.pose_callback)
+        self.pose_subscriber = rospy.Subscriber('/next_viewpoints', PoseArray, self.pose_callback)
         self.client.wait_for_server()
 
         self.costmap_subscriber = rospy.Subscriber(
             '/move_base/global_costmap/costmap', OccupancyGrid, self.costmap_callback)
         self.costmap = OccupancyGrid()
-
-        self.nv_pub = rospy.Publisher('/next_viewpoints', PoseArray, queue_size=10)
 
         # flag of navigation
         self.nav_completed_flag_pub = rospy.Publisher('/nav_completed', Bool, queue_size=10)
@@ -33,7 +32,6 @@ class MoveBaseClient:
         for pose in pose_array.poses:
             if self.is_goal_reachable(pose.position.x, pose.position.y):
                 valid_poses.poses.append(pose)
-        self.nv_pub.publish(valid_poses)
         rospy.loginfo("Valid %d poses", len(valid_poses.poses))
 
         for pose in valid_poses.poses:
@@ -48,9 +46,11 @@ class MoveBaseClient:
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = pose
         self.client.send_goal(goal)
-        wait = self.client.wait_for_result()
-        if not wait:
-            rospy.logerr("Action server not available!")
+        finished_within_time = self.client.wait_for_result(self.goal_timeout)
+        if not finished_within_time:
+            rospy.logwarn("Timed out achieving goal")
+            self.client.cancel_goal()  # Cancel the current goal
+            return None
         else:
             return self.client.get_result()
 

@@ -55,8 +55,14 @@ def kobuki_pose2rgbd():
     return pose2rgbd_matrix
 
 
-def preprocess_extrinsics(extrinsics):
+def preprocess_extrinsics(extrinsics, global2camera=None):
     extrinsics = np.stack(extrinsics)
+    if global2camera is not None:
+        return relative_transform(
+            np.stack([global2camera for _ in range(len(extrinsics))]),
+            extrinsics,
+        )
+
     return relative_transform(
         np.stack([extrinsics[0] for _ in range(len(extrinsics))]),
         extrinsics,
@@ -89,6 +95,8 @@ def rand_cmap(nlabels, type='bright', first_color_black=True, last_color_black=F
     from matplotlib.colors import LinearSegmentedColormap
     import colorsys
     import numpy as np
+
+    np.random.seed(42)
 
     if type not in ('bright', 'soft'):
         print ('Please choose "bright" or "soft" for type')
@@ -163,6 +171,45 @@ def get_cmap_legend(cmap, labels, row_length=10, savefile=None):
 
     plt.axis('off')
     plt.ylim(-(len(labels) + row_length - 1) // row_length, 1)
+    if savefile is not None:
+        plt.savefig(savefile, bbox_inches='tight', pad_inches=0)
+    else:
+        plt.show()
+
+
+def save_cmap_legend_bar_separated(cmap, labels, savefile=None):
+    """Generate and save a wider vertical, separated legend bar for a colormap.
+
+    Args:
+        cmap (matplotlib.colors.Colormap): Colormap.
+        labels (list): List of class names.
+        savefile (str, optional): File path to save the legend bar image. Defaults to None.
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+
+    # Determine the height of each color segment and the space between them
+    segment_height = 1
+    space_height = 0.2  # Adjust the space height as needed
+
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(4, len(labels) * (segment_height + space_height)))  # Increased figure width
+
+    # Add colored rectangles
+    for i, label in enumerate(labels):
+        color = cmap(i / len(labels))
+        rect = patches.Rectangle((0.5, i * (segment_height + space_height)), 1.5, segment_height,
+                                 linewidth=1, edgecolor='r', facecolor=color)
+        ax.add_patch(rect)
+        ax.text(2.1 , i * (segment_height + space_height) + segment_height / 2, label,
+                va='center', ha='left', fontsize=18)
+
+    # Set limits and hide axes
+    ax.set_xlim(0, 4)
+    ax.set_ylim(0, len(labels) * (segment_height + space_height))
+    ax.axis('off')
+
+    # Optionally save the legend bar
     if savefile is not None:
         plt.savefig(savefile, bbox_inches='tight', pad_inches=0)
     else:

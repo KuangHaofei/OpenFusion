@@ -10,7 +10,7 @@ import os
 from openfusion.io import BaseIO, SocketIO
 from openfusion.state import BaseState, VLState, CFState
 from openfusion.zoo.base_model import VLFM, build_vl_model
-from openfusion.utils import rand_cmap, get_cmap_legend
+from openfusion.utils import rand_cmap, get_cmap_legend, save_cmap_legend_bar_separated
 from matplotlib import pyplot as plt
 from typing import List, Tuple, Union, Optional, Dict, Any
 try:
@@ -352,7 +352,8 @@ class VLSLAM(BaseSLAM):
             points, colors = self.point_state.get_pc(n_points)
         if cmap is None:
             cmap = rand_cmap(len(query), type="bright", first_color_black=False)
-            get_cmap_legend(cmap, query, savefile=save_file)
+            # get_cmap_legend(cmap, query, savefile=save_file)
+            save_cmap_legend_bar_separated(cmap, query, savefile=save_file)
         return self.point_state.semantic_query(t_emb, points, colors, cmap)
 
     @torch.no_grad()

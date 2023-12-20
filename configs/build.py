@@ -1,64 +1,9 @@
 import os.path as osp
-from openfusion.datasets import ICL, Replica, ScanNet, Kobuki, Live, HabitatSim, Dingo
+from openfusion.datasets import HabitatSim, Robot
 
 BASE_PATH = osp.dirname(osp.dirname(osp.abspath(__file__)))
 
 PARAMS = {
-    "kobuki": {
-        "dataset": Kobuki,
-        "path": "{}/sample/kobuki/{}",
-        "depth_scale": 1000.0,
-        "depth_max": 5.0,
-        "voxel_size": 8.0 / 512,
-        "block_resolution": 8,
-        "block_count": 100000, # will be increased automatically if needed
-        "img_size": (1280,720),
-        "input_size": (640,360)
-    },
-    "icl": {
-        "dataset": ICL,
-        "path": "{}/sample/icl/living_room/{}",
-        "depth_scale": 5000.0,
-        "depth_max": 5.0,
-        "voxel_size": 8.0 / 512,
-        "block_resolution": 8,
-        "block_count": 20000,
-        "img_size": (640,480),
-        "input_size": (640,480)
-    },
-    "replica": {
-        "dataset": Replica,
-        "path": "{}/sample/replica/{}",
-        "depth_scale": 6553.5,
-        "depth_max": 5.0,
-        "voxel_size": 8.0 / 512,
-        "block_resolution": 8,
-        "block_count": 20000,
-        "img_size": (1200,680),
-        "input_size": (600,340)
-    },
-    "scannet": {
-        "dataset": ScanNet,
-        "path": "{}/sample/scannet/{}",
-        "depth_scale": 1000.0,
-        "depth_max": 5.0,
-        "voxel_size": 10.0 / 512,
-        "block_resolution": 8,
-        "block_count": 20000,
-        "img_size": (640,480), # Resize RGB to match depth
-        "input_size": (320,240)
-    },
-    "live": {
-        "dataset": Live,
-        "path": "{}/sample/live/{}",
-        "depth_scale": 1000.0,
-        "depth_max": 5.0,
-        "voxel_size": 5.0 / 512,
-        "block_resolution": 8,
-        "block_count": 100000, # will be increased automatically if needed
-        "img_size": (640,360),
-        "input_size": (640,360)
-    },
     "habitat": {
         "dataset": HabitatSim,
         "path": "{}/sample/habitat/{}",
@@ -70,26 +15,86 @@ PARAMS = {
         "img_size": (1080, 720),
         "input_size": (1080, 720)
     },
-    "dingo_hospital": {
-        "dataset": Dingo,
-        "path": "{}/sample/dingo/{}",
+    "house": {
+        "dataset": Robot,
+        "path": "{}/sample/house/{}",
         "depth_scale": 1000.0,
-        "depth_max": 5.0,
-        "voxel_size": 16.0 / 512,
-        "block_resolution": 16,
+        "depth_max": 3.0,
+        "voxel_size": 6.0 / 512,
+        "block_resolution": 8,
+        "block_count": 500000,
+        "img_size": (640, 480),
+        "input_size": (640, 480),
+        "objects": [
+            "ceiling",
+            "floor",
+            "wall",
+            "door",
+            "window",
+            "sofa",
+            "bed",
+            "chair",
+            "light",
+            "table",
+            "cabinet",
+            "refrigerator",
+            "air_conditioner",
+            "kitchen_table",
+            "tv",
+            "ball",
+            "others"
+        ]
+    },
+    "office": {
+        "dataset": Robot,
+        "path": "{}/sample/office/{}",
+        "depth_scale": 1000.0,
+        "depth_max": 3.0,
+        "voxel_size": 6.0 / 512,
+        "block_resolution": 8,
         "block_count": 100000,
         "img_size": (640, 480),
         "input_size": (640, 480),
         "objects": [
-            "floor",
+            'ceiling',
+            'floor',
+            'wall',
+            'sink',
+            'door',
+            'oven',
+            'garbage can',
+            'whiteboard',
+            'table',
+            'desk',
+            'sofa',
+            'chair',
+            'bookshelf',
+            'cabinet',
+            'extinguisher',
+            'people',
+            'others'
+        ]
+    },
+    "hospital": {
+        "dataset": Robot,
+        "path": "{}/sample/hospital/{}",
+        "depth_scale": 1000.0,
+        "depth_max": 5.0,
+        "voxel_size": 12.0 / 512,
+        "block_resolution": 8,
+        "block_count": 500000,
+        "img_size": (640, 480),
+        "input_size": (640, 480),
+        "objects": [
             "ceiling",
+            "floor",
             "walls",
-            "nurses_station",
+            "nurses station",
             "door",
             "chair",
             "trolley bed",
             "table",
-            "sofe",
+            "sofa",
             "medical machine",
             "tv",
             "kitchen cabinet",
@@ -97,36 +102,7 @@ PARAMS = {
             "toilet",
             "sink",
             "trash",
-            "warehouse clusters"
-            "others"
-        ]
-    },
-    "dingo_house": {
-        "dataset": Dingo,
-        "path": "{}/sample/dingo/{}",
-        "depth_scale": 1000.0,
-        "depth_max": 5.0,
-        "voxel_size": 8.0 / 512,
-        "block_resolution": 8,
-        "block_count": 100000,
-        "img_size": (640, 480),
-        "input_size": (640, 480),
-        "objects": [
-            "Floor",
-            "Wall",
-            "Door",
-            "Window",
-            "Sofa",
-            "Bed",
-            "Chair",
-            "Light",
-            "Table",
-            "Cabinet",
-            "Refrigerator",
-            "Airconditioner",
-            "KitchenTable",
-            "TV",
-            "Ball",
+            "warehouse clusters",
             "others"
         ]
     },

@@ -58,8 +58,8 @@ class SLAMNode:
         pose = np.loadtxt('/home/ipbhk/OpenFusion/sample/dingo/dingo_house/poses.txt')[0]
         camera_origin = Pose()
         camera_origin.position.x, camera_origin.position.y, camera_origin.position.z = pose[:3]
-        camera_origin.orientation.x, camera_origin.orientation.y, camera_origin.orientation.z, camera_origin.orientation.w = pose[
-                                                                                                                             3:]
+        (camera_origin.orientation.x, camera_origin.orientation.y,
+         camera_origin.orientation.z, camera_origin.orientation.w) = pose[3:]
         self.global2camera = pose_to_transformation_matrix(camera_origin)
 
         # build slam system
