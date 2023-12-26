@@ -66,9 +66,11 @@ def main():
     args = parser.parse_args()
 
     params = get_config(args.data, args.scene)
-    dataset: Dataset = params["dataset"](params["path"], args.frames, args.stream)
+    # dataset: Dataset = params["dataset"](params["path"], args.frames, args.stream)
+    dataset: Dataset = params["dataset"](params["path"], -1, args.stream)
     if args.model_completion:
         dataset_completion: Dataset = params["dataset"](params["path"], args.frames, args.stream, args.model_completion)
+        # dataset_completion.current = 290
     intrinsic = dataset.load_intrinsics(params["img_size"], params["input_size"])
     slam = build_slam(args, intrinsic, params)
 
@@ -108,8 +110,8 @@ def main():
     np.save(f"{save_path}/rgb_colors.npy", rgb_colors)
     print(f"[*] saved point cloud to {f'{save_path}/rgb_points.npy'} and {f'{save_path}/rgb_colors.npy'}")
     show_pc(rgb_points, rgb_colors)
-    save_pc(rgb_points, rgb_colors, f"{save_path}/color_pc.ply")
-    print(f"[*] saved color point cloud to {f'{save_path}/color_pc.ply'}")
+    # save_pc(rgb_points, rgb_colors, f"{save_path}/color_pc.ply")
+    # print(f"[*] saved color point cloud to {f'{save_path}/color_pc.ply'}")
 
     # NOTE: save colorized mesh
     # mesh = slam.point_state.get_mesh()
@@ -131,8 +133,8 @@ def main():
               f"{f'{save_path}/sem_points.npy'}, "
               f"{save_path}/sem_colors.npy and {save_path}/semseg.npy")
         show_pc(sem_points, sem_colors)
-        save_pc(sem_points, sem_colors, f"{save_path}/semantic_pc.ply")
-        print(f"[*] saved semantic point cloud to {f'{save_path}/semantic_pc.ply'}")
+        # save_pc(sem_points, sem_colors, f"{save_path}/semantic_pc.ply")
+        # print(f"[*] saved semantic point cloud to {f'{save_path}/semantic_pc.ply'}")
 
 
 if __name__ == "__main__":

@@ -31,43 +31,46 @@ def get_semantic(sem_points, sem_colors, semseg,
     return exploration_pcds
 
 
-root_dir = '/home/ipbhk/OpenFusion/results/hospital_gazebo_hospital'
+root_dir = '/home/ipbhk/OpenFusion/results/office_ipblab1'
 sem_points = np.load(root_dir + '/sem_points.npy')
 sem_colors = np.load(root_dir + '/sem_colors.npy')
 semseg = np.load(root_dir + '/semseg.npy')
 
 total_classes = [
-    "ceiling",
-    "floor",
-    "walls",
-    "nurses station",
-    "door",
-    "chair",
-    "trolley bed",
-    "table",
-    "sofa",
-    "medical machine",
-    "tv",
-    "kitchen cabinet",
-    "refrigerator",
-    "toilet",
-    "sink",
-    "trash",
-    "warehouse clusters",
-    "others"
+    'ceiling',
+    'floor',
+    'wall',
+    'sink',
+    'door',
+    'oven',
+    'garbage can',
+    'whiteboard',
+    'table',
+    'desk',
+    'sofa',
+    'chair',
+    'bookshelf',
+    'cabinet',
+    'extinguisher',
+    'people',
+    'others'
 ]
 
 exploration_objects = [
-    "chair",
+    # 'oven',
+    # 'table',
+    # 'sofa',
+    'bookshelf',
+    # 'cabinet',
 ]
 
 camera2realcamera = np.array(
-            [[0.0, 0.0, 1.0, 0.0],
-             [-1.0, 0.0, 0.0, 0.0],
-             [0.0, -1.0, 0.0, 0.0],
-             [0.0, 0.0, 0.0, 1.0]])
+    [[0.0, 0.0, 1.0, 0.0],
+     [-1.0, 0.0, 0.0, 0.0],
+     [0.0, -1.0, 0.0, 0.0],
+     [0.0, 0.0, 0.0, 1.0]])
 
-pose = np.loadtxt(f'/home/ipbhk/OpenFusion/sample/hospital/gazebo_hospital/poses.txt')[0]
+pose = np.loadtxt(f'/home/ipbhk/OpenFusion/sample/office/ipblab1/poses.txt')[0]
 camera_origin = Pose()
 camera_origin.position.x, camera_origin.position.y, camera_origin.position.z = pose[:3]
 camera_origin.orientation.x, camera_origin.orientation.y, camera_origin.orientation.z, camera_origin.orientation.w = pose[
@@ -77,8 +80,6 @@ global2camera = pose_to_transformation_matrix(camera_origin) @ camera2realcamera
 exploration_pcds = get_semantic(sem_points, sem_colors, semseg,
                                 total_classes, exploration_objects, global2camera)
 
-
-
 print("[*] Starting semantic-based completion...")
 
 for object_idx in range(len(exploration_pcds)):
@@ -86,14 +87,14 @@ for object_idx in range(len(exploration_pcds)):
     objects_pcd = exploration_pcds[object_idx]
     print(objects_pcd)
 
-    labels = np.asarray(objects_pcd.cluster_dbscan(eps=0.4, min_points=1000, print_progress=True))
+    labels = np.asarray(objects_pcd.cluster_dbscan(eps=0.2, min_points=100, print_progress=True))
     if labels.size == 0:
         max_label = -1
     else:
         max_label = labels.max()
     print(f"point cloud has [{max_label + 1}] clusters")
     cluster_sizes = np.bincount(labels[labels >= 0])
-    large_clusters = [i for i, size in enumerate(cluster_sizes) if size > 50]
+    large_clusters = [i for i, size in enumerate(cluster_sizes) if size > 12000]
     # Sort these clusters based on their sizes and select the top two
     # large_clusters = sorted(large_clusters,
     #                                key=lambda x: cluster_sizes[x], reverse=True)[:2]
@@ -115,4 +116,3 @@ for object_idx in range(len(exploration_pcds)):
 
     objects_pcd.colors = o3d.utility.Vector3dVector(colors[:, :3])
     o3d.visualization.draw_geometries([objects_pcd])
-
